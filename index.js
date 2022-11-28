@@ -2,7 +2,6 @@ const express = require('express');
 const CryptoJS = require('crypto-js');
 const SHA256 = require('crypto-js/sha256');
 const Base64 = require('crypto-js/enc-base64');
-const request = require('request');
 const app = express();
 const port = 3000;
 const axios = require('axios');
@@ -20,9 +19,9 @@ app.use(
 );
 
 async function send_message(username,phone) {
-  var user_phone_number = phone; //수신 전화번호 기입
-  var user_name = username
-  var resultCode = 404;
+  let user_phone_number = phone; //수신 전화번호 기입
+  let user_name = username
+  let resultCode = 404;
   const my_number = '01055936691';
   const date = Date.now().toString();
   const options = {
@@ -86,6 +85,18 @@ async function send_message(username,phone) {
   return resultCode;
 }
 
+
+exports.handler = async (event) => {
+  
+    const paramObj = event;
+    // 
+    send_message(paramObj.username,paramObj.phone);
+    // send_message 모듈을 실행시킨다.
+    
+    return paramObj;
+    
+  
+};
 
 app.post('/sms', async (req, res, next) => {
     
