@@ -111,37 +111,25 @@ async function getmembers(date,sendTime,checkTime){
 }
 
 
-exports.handler = async () => {
-  const curr = new Date();
-  const utc = curr.getTime() + (curr.getTimezoneOffset() * 60 * 1000);
-  const KR_TIME_DIFF = 9 * 60 * 60 * 1000;
-  const date = new Date(utc + KR_TIME_DIFF);
-
-  let date1 = `${date.getFullYear()}-${date.getDate()+1}-${date.getDate()}`;
-  let sendTime = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
-    if(date.getUTCMinutes()<10){
-      sendTime = `${date.getUTCHours()}:0${date.getUTCMinutes()}`;
-      }
-  let checkTime = `${date.getUTCHours()}:${date.getUTCMinutes()+30}`;
-    if(date.getUTCMinutes()>=30){
-      checkTime = `${date.getUTCHours()+1}:${date.getUTCMinutes()-30}`;
-      }
-
-  // let date1 = "2022-12-29";
-  // let sendTime = "23:30";
-  // let checkTime = "09:00";
-  getmembers(date1,sendTime,checkTime);
-
-
-    return date1+" "+sendTime+" "+checkTime;
-    
-};
-
 app.post('/sms', async (req, res, next) => {
     
   try {
+    const curr = new Date();
+    const utc = curr.getTime() + (curr.getTimezoneOffset() * 60 * 1000);
+    const KR_TIME_DIFF = 9 * 60 * 60 * 1000;
+    const date = new Date(utc + KR_TIME_DIFF);
+
+    let date1 = `${date.getFullYear()}-${date.getDate()+1}-${date.getDate()}`;
+    let sendTime = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+      if(date.getUTCMinutes()<10){
+        sendTime = `${date.getUTCHours()}:0${date.getUTCMinutes()}`;
+        }
+    let checkTime = `${date.getUTCHours()}:${date.getUTCMinutes()+30}`;
+      if(date.getUTCMinutes()>=30){
+        checkTime = `${date.getUTCHours()+1}:${date.getUTCMinutes()-30}`;
+        }
     
-    getmembers(req.body.date,req.body.sendTime,req.body.checkTime);
+    getmembers(date1,sendTime,checkTime);
     res.send('send message!');
   } catch (err) {
     next(err);
