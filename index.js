@@ -10,6 +10,7 @@ const cors = require("cors");
 dotenv.config();
 
 
+
 app.use(cors());
 app.use(express.json());
 app.use(
@@ -85,28 +86,62 @@ async function send_message(username,phone) {
   return resultCode;
 }
 
+async function getmembers(date,sendTime,checkTime){
+  
+  axios({
+      method: 'post',
+      url: 'http://ec2-3-37-180-254.ap-northeast-2.compute.amazonaws.com:8080/api/v1/members/ontime',
+      data: {
+        date: date,
+        sendTime: sendTime,
+        checkTime: checkTime
+      }
+    }).then((res) => {
+      const data = res.data.data.members;
+      console.log(data);
+      for(let i = 0; i<data.length;i++){
+        send_message(data[i].memberName,data[i].memberPhoneNumber);
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+    return 404;
+    
+}
 
-exports.handler = async (event) => {
-  
-    const paramObj = event;
-    // 
-    send_message(paramObj.username,paramObj.phone);
-    // send_message 모듈을 실행시킨다.
+
+exports.handler = async () => {
+  const curr = new Date();
+  const utc = curr.getTime() + (curr.getTimezoneOffset() * 60 * 1000);
+  const KR_TIME_DIFF = 9 * 60 * 60 * 1000;
+  const date = new Date(utc + KR_TIME_DIFF);
+
+  let date1 = `${date.getFullYear()}-${date.getDate()+1}-${date.getDate()}`;
+  let sendTime = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+    if(date.getUTCMinutes()<10){
+      sendTime = `${date.getUTCHours()}:0${date.getUTCMinutes()}`;
+      }
+  let checkTime = `${date.getUTCHours()}:${date.getUTCMinutes()+30}`;
+    if(date.getUTCMinutes()>=30){
+      checkTime = `${date.getUTCHours()+1}:${date.getUTCMinutes()-30}`;
+      }
+
+  // let date1 = "2022-12-29";
+  // let sendTime = "23:30";
+  // let checkTime = "09:00";
+  getmembers(date1,sendTime,checkTime);
+
+
+    return date1+" "+sendTime+" "+checkTime;
     
-    return paramObj;
-    
-  
 };
 
 app.post('/sms', async (req, res, next) => {
     
   try {
-    // user 정보를 mongodb에 저장한 후
-    const paramObj = req.body;
-    console.log(req.body)
-  res.setHeader('Content-Type', 'application/json');
-    // send_message 모듈을 실행시킨다.
-    send_message(paramObj.username,paramObj.phone);
+    
+    getmembers(req.body.date,req.body.sendTime,req.body.checkTime);
     res.send('send message!');
   } catch (err) {
     next(err);
