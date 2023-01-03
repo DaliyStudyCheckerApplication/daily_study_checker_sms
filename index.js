@@ -2,13 +2,13 @@ const express = require('express');
 const CryptoJS = require('crypto-js');
 const SHA256 = require('crypto-js/sha256');
 const Base64 = require('crypto-js/enc-base64');
-const request = require('request');
 const app = express();
 const port = 3000;
 const axios = require('axios');
 const dotenv = require('dotenv');
 const cors = require("cors");
 dotenv.config();
+
 
 
 app.use(cors());
@@ -20,9 +20,9 @@ app.use(
 );
 
 async function send_message(username,phone) {
-  var user_phone_number = phone; //수신 전화번호 기입
-  var user_name = username
-  var resultCode = 404;
+  let user_phone_number = phone; //수신 전화번호 기입
+  let user_name = username
+  let resultCode = 404;
   const my_number = '01055936691';
   const date = Date.now().toString();
   const options = {
@@ -86,16 +86,50 @@ async function send_message(username,phone) {
   return resultCode;
 }
 
+async function getmembers(date,sendTime,checkTime){
+  
+  axios({
+      method: 'post',
+      url: 'http://ec2-3-37-180-254.ap-northeast-2.compute.amazonaws.com:8080/api/v1/members/ontime',
+      data: {
+        date: date,
+        sendTime: sendTime,
+        checkTime: checkTime
+      }
+    }).then((res) => {
+      const data = res.data.data.members;
+      console.log(data);
+      for(let i = 0; i<data.length;i++){
+        send_message(data[i].memberName,data[i].memberPhoneNumber);
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+    return 404;
+    
+}
+
 
 app.post('/sms', async (req, res, next) => {
     
   try {
-    // user 정보를 mongodb에 저장한 후
-    const paramObj = req.body;
-    console.log(req.body)
-  res.setHeader('Content-Type', 'application/json');
-    // send_message 모듈을 실행시킨다.
-    send_message(paramObj.username,paramObj.phone);
+    const curr = new Date();
+    const utc = curr.getTime() + (curr.getTimezoneOffset() * 60 * 1000);
+    const KR_TIME_DIFF = 9 * 60 * 60 * 1000;
+    const date = new Date(utc + KR_TIME_DIFF);
+
+    let date1 = `${date.getFullYear()}-${date.getDate()+1}-${date.getDate()}`;
+    let sendTime = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+      if(date.getUTCMinutes()<10){
+        sendTime = `${date.getUTCHours()}:0${date.getUTCMinutes()}`;
+        }
+    let checkTime = `${date.getUTCHours()}:${date.getUTCMinutes()+30}`;
+      if(date.getUTCMinutes()>=30){
+        checkTime = `${date.getUTCHours()+1}:${date.getUTCMinutes()-30}`;
+        }
+    
+    getmembers(date1,sendTime,checkTime);
     res.send('send message!');
   } catch (err) {
     next(err);
